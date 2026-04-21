@@ -86,13 +86,10 @@ def parse_size(s):
 
 def primary_material(m):
     """Normalise material names.
-    'AL5083/AL6061' → 'AL5083'
+    'AL5083/AL6061' → kept as-is (Monica version)
     'MS'            → 'MS (bandsaw)'
     """
-    if m and "/" in str(m):
-        m = str(m).split("/")[0].strip()
-    else:
-        m = str(m).strip() if m else ""
+    m = str(m).strip() if m else ""
     if m.upper().startswith("MS"):
         return f"{m} (bandsaw)"
     return m
@@ -302,9 +299,7 @@ def fill_enquiry_sheet(ws, pmc_rows: list, company: str = "AFA TECHNOLOGIES SDN 
             dst.alignment     = copy(ref_fmt[c]["alignment"])
             dst.number_format = ref_fmt[c]["number_format"]
 
-        # Highlight AL6061 material cell — Blue, Accent 5, Lighter 40%
-        if item["material"].upper().startswith("AL6061"):
-            ws.cell(row, 4).fill = AL6061_FILL
+        # No colour highlight for AL materials in Monica version
 
     last_data_row = DATA_START + n_new - 1
     new_footer1   = last_data_row + 1
