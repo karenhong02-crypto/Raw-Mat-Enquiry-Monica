@@ -320,10 +320,16 @@ def fill_enquiry_sheet(ws, pmc_rows: list, company: str = "AFA TECHNOLOGIES SDN 
 # ---------------------------------------------------------------------------
 
 def get_bom_sheet(wb_bom):
-    """Always use the sheet named 'Table' from the BOM workbook."""
-    if "Table" not in wb_bom.sheetnames:
-        raise ValueError("Sheet 'Table' not found in BOM file. Please ensure the BOM contains a sheet named 'Table'.")
-    return wb_bom["Table"]
+    """Always use the sheet named 'Table' (case-insensitive) from the BOM workbook."""
+    sheet_map = {s.lower(): s for s in wb_bom.sheetnames}
+    if "table" not in sheet_map:
+        available = ", ".join(wb_bom.sheetnames) or "none"
+        raise ValueError(
+            f"Sheet 'Table' not found in BOM file. "
+            f"Available sheets: {available}. "
+            f"Please ensure the BOM contains a sheet named 'Table'."
+        )
+    return wb_bom[sheet_map["table"]]
 
 
 def build_enquiry_bytes(bom_path: str, enq_path: str) -> tuple[bytes, dict]:
