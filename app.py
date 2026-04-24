@@ -320,16 +320,37 @@ def fill_enquiry_sheet(ws, pmc_rows: list, company: str = "AFA TECHNOLOGIES SDN 
 # ---------------------------------------------------------------------------
 
 def get_bom_sheet(wb_bom):
-    """Always use the sheet named 'Table' (case-insensitive) from the BOM workbook."""
+    """Return the BOM worksheet that contains the Excel Table named 'Table'.
+    Strategy:
+      1. Look for a sheet tab named 'Table' (case-insensitive).
+      2. Look for any sheet that contains an Excel ListObject/Table named 'Table'
+         (case-insensitive) — common in .xlsm BOM files.
+      3. Raise a descriptive error listing all sheets and table names found.
+    """
+    # 1. Sheet tab named 'Table'
     sheet_map = {s.lower(): s for s in wb_bom.sheetnames}
-    if "table" not in sheet_map:
-        available = ", ".join(wb_bom.sheetnames) or "none"
-        raise ValueError(
-            f"Sheet 'Table' not found in BOM file. "
-            f"Available sheets: {available}. "
-            f"Please ensure the BOM contains a sheet named 'Table'."
-        )
-    return wb_bom[sheet_map["table"]]
+    if "table" in sheet_map:
+        return wb_bom[sheet_map["table"]]
+
+    # 2. Sheet containing an Excel Table/ListObject named 'Table'
+    for sheet_name in wb_bom.sheetnames:
+        ws = wb_bom[sheet_name]
+        table_names = {t.lower(): t for t in ws.tables}
+        if "table" in table_names:
+            return ws
+
+    # 3. Nothing matched — build a helpful error
+    all_sheets = ", ".join(wb_bom.sheetnames) or "none"
+    all_tables = []
+    for sheet_name in wb_bom.sheetnames:
+        for t in wb_bom[sheet_name].tables:
+            all_tables.append(f"{t} (in sheet '{sheet_name}')")
+    table_info = ", ".join(all_tables) or "none"
+    raise ValueError(
+        f"Could not find a sheet or Excel Table named 'Table' in the BOM file. "
+        f"Sheet tabs found: {all_sheets}. "
+        f"Excel Tables found: {table_info}."
+    )
 
 
 def build_enquiry_bytes(bom_path: str, enq_path: str) -> tuple[bytes, dict]:
